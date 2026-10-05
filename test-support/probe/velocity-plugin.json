@@ -1,0 +1,1 @@
+{"id":"queuenoticetestprobe","name":"QueueNoticeTestProbe","version":"1.0.0","main":"com.nordfjell.nordqueuenotice.test.NoticeTestProbe","dependencies":[{"id":"nordqueue","optional":false},{"id":"nordqueuenotice","optional":false}]}

@@ -1,0 +1,1 @@
+{"id":"nordqueuenotice","name":"NordQueueNotice","version":"1.1.0","description":"Bounded session-safe priority queue notices for Nord Fjell","authors":["Nord Fjell"],"dependencies":[{"id":"nordqueue","optional":false}],"main":"com.nordfjell.nordqueuenotice.NordQueueNoticePlugin"}
