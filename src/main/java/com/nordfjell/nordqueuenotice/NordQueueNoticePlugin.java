@@ -21,7 +21,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@Plugin(id="nordqueuenotice", name="NordQueueNotice", version="1.1.0",
+@Plugin(id="nordqueuenotice", name="NordQueueNotice", version="1.1.1",
         description="Bounded session-safe priority queue notices for Nord Fjell",
         authors={"Nord Fjell"}, dependencies={@Dependency(id="nordqueue")})
 public final class NordQueueNoticePlugin {
@@ -63,7 +63,7 @@ public final class NordQueueNoticePlugin {
             task=proxy.getScheduler().buildTask(this,this::tick)
                     .delay(NoticeSchedule.TICK_MILLIS,TimeUnit.MILLISECONDS)
                     .repeat(NoticeSchedule.TICK_MILLIS,TimeUnit.MILLISECONDS).schedule();
-            logger.info("NordQueueNotice 1.1.0: ready={}, one ticker, scan<=256, send<=32 per 250 ms.",settings!=null);
+            logger.info("NordQueueNotice 1.1.1: ready={}, one ticker, scan<=256, send<=32 per 250 ms.",settings!=null);
         }
     }
     private boolean isCurrent(Player player) {

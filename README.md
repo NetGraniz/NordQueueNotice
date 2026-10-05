@@ -1,5 +1,8 @@
 # NordQueueNotice 1.1.0
 
+> Release build and installation requirements: see [BUILDING.md](BUILDING.md).
+> Older local paths below describe historical test fixtures, not the release build.
+
 The default notice is a generic waiting message, without advertising or a server
 domain. After the first proxy start, customize `message` in the installed plugin's
 `config.properties`; MiniMessage supports your own links. Existing configuration
