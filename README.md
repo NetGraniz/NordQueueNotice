@@ -1,66 +1,67 @@
-# NordQueueNotice 1.1.0
+# NordQueueNotice 1.1.1
 
-> Release build and installation requirements: see [BUILDING.md](BUILDING.md).
-> Older local paths below describe historical test fixtures, not the release build.
+Queue notices for Velocity and NanoLimbo, using NordQueue membership and current player/connection identity.
 
-The default notice is a generic waiting message, without advertising or a server
-domain. After the first proxy start, customize `message` in the installed plugin's
-`config.properties`; MiniMessage supports your own links. Existing configuration
-is never replaced by this default.
+Only queued sessions on the queue backend receive notices. Moving to the main server stops further sends but does not erase a notice already in chat history.
 
-Separate Velocity plugin for the clickable priority-queue website notice in
-NanoLimbo. Uses current NordQueue 1.1.2 membership and current player/connection
-identity. Only queued sessions on the queue backend are eligible. It does not
-clear chat when players move to the main server; the former advertisement can
-remain in their chat history.
+## Configuration
 
-Commands, all requiring `nordqueuenotice.admin` in metadata AND executor:
+The default is a generic waiting message with no advertising or server domain. After first startup, customize `message` in the installed `config.properties`. MiniMessage supports clickable links, including a priority-queue website.
 
-- `/nordqueuenotice` or `/nordqueuenotice reload`: queue one asynchronous reload.
-- `/nordqueuenotice health`: inspect readiness, tracked sessions and pending reload.
+Existing configuration is never replaced by the default. Properties retain ISO-8859-1 decoding with Unicode escapes. Startup creates a missing file; neither startup nor reload rewrites an existing one.
 
-The separate NordCommandsVelocity policy still applies to player commands:
-its broad bypass does not grant this plugin's admin permission.
+| Field | Range | Default |
+| --- | --- | --- |
+| `interval-seconds` | 3..3600 | 8 |
+| `initial-delay-millis` | 0..60000 | 750 |
+| `clear-lines` | 0..200; 0 disables blank-line clearing in limbo | 40 |
+| `message` | Nonblank MiniMessage; at most 8192 UTF-16 code units and 128 tag starts | Generic waiting message |
 
-One 250 ms ticker replaces per-player delayed tasks. It inspects at most 256
-tracked entries and attempts at most 32 frames per invocation, with a monotonic
-token bucket allowing 128 attempts/sec sustained and a 32-frame burst. Concurrent
-ticker callbacks are skipped, not queued behind one another. Capacity is 4096
-session records; overflow only omits the optional advertisement, never changes
-queue admission. Round-robin processing defers work fairly when the send budget
-is exhausted. The initial delay and repeat interval are lower bounds; high
-occupancy or scheduling delays can postpone delivery.
+Files are limited to 64 KiB. Duplicate or unknown keys, malformed fields and bad Unicode are rejected. MiniMessage requires strict tag closure.
 
-Messages are parsed once per valid configuration and cached as one immutable
-frame containing the configured clear lines plus clickable notice. No file I/O,
-MiniMessage parsing or whole-proxy player scan occurs in the send loop.
-Disconnect removes only the matching owner; reconnection and new queue-connection
-identities invalidate old deadline tokens. Shutdown cancels the ticker, interrupts
-the single config reader and discards late results.
+Rendered components are limited to 4096 traversed nodes, depth 32 and a JSON representation of at most 64 KiB. Traversal covers text, children, translation arguments, selector/NBT separators and text/entity-name hovers.
 
-Legacy config.properties decoding is retained: ISO-8859-1 + Unicode escapes.
-Existing files are never rewritten on startup or reload. Missing files are created
-only during initialization. Invalid initial configuration disables notices; invalid
-reload keeps the last complete settings. Repair the file and run an authorized
-reload. Reader capacity is one in-flight request/result; repeated reload requests
-are rejected while pending and do not create additional tasks/readers.
+Templates are trusted administrator input, not a sandbox for arbitrary component features. Earlier production settings passed a read-only compatibility check; review your installed file when updating.
 
-Supported fields and validation:
+## Commands
 
-- interval-seconds: 3..3600; default 8.
-- initial-delay-millis: 0..60000; default 750.
-- clear-lines: 0..200; default 40; 0 disables blank-line clearing in limbo.
-- message: nonblank MiniMessage, at most 8192 UTF-16 code units and 128 tag starts.
+- `/nordqueuenotice` or `/nordqueuenotice reload` queues one asynchronous reload.
+- `/nordqueuenotice health` reports readiness, tracked sessions and pending reload.
 
-Files are at most 64 KiB; duplicate/unknown keys, malformed fields and bad Unicode
-are rejected. MiniMessage uses strict tag closure. Rendered component bounds are
-4096 nodes / depth 32 for traversed text, children, translation arguments,
-selector/NBT separators and text/entity-name hovers; JSON representation <=64 KiB.
-Templates are trusted administrator input, not a sandbox for arbitrary component
-features. Current production settings passed a read-only compatibility check.
+## Permissions
 
-Build/checks: build.ps1, using isolated LOCAL Velocity libraries and the pinned
-NordQueue 1.1.2 release; main/test classes are separated. Network scenarios live
-in test-support/integration.cjs, fixture-only probes must never be deployed.
-Source/release/evidence stay on this network share. See SECURITY-1.1.0.md.
-1000-player production capacity and ordinary-client UI behavior are not claimed.
+| Permission | Allows |
+| --- | --- |
+| `nordqueuenotice.admin` | All commands above |
+
+Both command metadata and the executor check this node. Player grants come from Velocity's permission provider; no default player grant is registered. Backend-only permissions do not apply here.
+
+NordCommandsVelocity's command policy is separate. Its bypass permission does not grant `nordqueuenotice.admin`.
+
+## Scheduling and limits
+
+One 250 ms ticker handles notices. Each invocation inspects at most 256 tracked entries and attempts at most 32 frames. A monotonic token bucket permits 128 attempts per second sustained, with a 32-frame burst.
+
+Concurrent ticker callbacks are skipped rather than queued. At most 4096 session records are tracked; overflow omits the optional notice without changing queue admission.
+
+Round-robin processing defers work when the send budget is exhausted. Initial delay and repeat interval are lower bounds: occupancy and scheduling delays can postpone a send.
+
+A valid configuration is parsed once into one immutable frame containing blank lines and the clickable notice. The send loop performs no file I/O, MiniMessage parsing or whole-proxy player scan.
+
+Disconnect removes only the matching owner. Reconnection or a new queue-connection identity invalidates old deadline tokens. Shutdown cancels the ticker, interrupts the single config reader and discards late results.
+
+## Reload failures
+
+Invalid initial configuration disables notices. An invalid reload retains the last complete settings. Repair the file and run an authorized reload.
+
+The reader permits one in-flight request/result. Repeated requests while busy are rejected without creating extra tasks or readers.
+
+## Build and tests
+
+Use Maven 3.9+ and JDK 25: `mvn clean verify` or `./build.ps1`. The current release uses the pinned NordQueue 1.1.3 dependency; main and test classes are separate. See [BUILDING.md](BUILDING.md).
+
+The 1.1.0 security checks used NordQueue 1.1.2. Their historical report, `SECURITY-1.1.0.md`, is excluded from the public repository. Historical local-library and network-share workflows are not the current release build.
+
+Network scenarios are in `test-support/integration.cjs`. Probes are fixture-only; never deploy them to production.
+
+These checks do not establish 1000-player production capacity or validate every ordinary-client UI behavior.
